@@ -3,28 +3,11 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const BETA: f64 = 0.8;
 
 const PA: usize = 16;
-const IN: usize = 8;
-const ALL: usize = 17;
+const IN: usize = 4;
+const ALL: usize = 13;
 
-fn teach_input() -> ([[f64; IN / 2]; PA], Vec<f64>) {
-    let g_indata_input = [
-        [0.0, 0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [1.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [1.0, 0.0, 1.0, 0.0],
-        [0.0, 1.0, 1.0, 0.0],
-        [1.0, 1.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [1.0, 0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [1.0, 1.0, 0.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0],
-        [1.0, 0.0, 1.0, 1.0],
-        [0.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0],
-    ];
+fn teach_input() -> ([[f64; IN / 2]; 4], Vec<f64>) {
+    let g_indata_input = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
     let g_indata_tch = g_indata_input
         .iter()
         .map(|input| {
@@ -74,7 +57,7 @@ fn sigmf(u: f64) -> f64 {
 }
 
 fn neuro_output_calc(
-    indata_input: &[f64; 4],
+    indata_input: &[f64; IN / 2],
     w_ot_ot: &[[f64; ALL + 2]; ALL + 2],
     ot_in: &mut [f64; ALL + 2],
 ) -> [f64; ALL + 2] {
@@ -152,7 +135,7 @@ fn neuro_weight_calc(
 
 fn neuro_calc(
     err: &mut f64,
-    indata_input: &[f64; 4],
+    indata_input: &[f64; IN / 2],
     indata_tch: f64,
     ot_in: &mut [f64; ALL + 2],
     ow: &Vec<f64>,
@@ -192,7 +175,7 @@ fn main() {
 
     loop {
         loop_ += 1;
-        for loopl in 0..PA {
+        for loopl in 0..IN {
             let ot_ot = neuro_calc(
                 &mut err,
                 &g_indata_input[loopl],
