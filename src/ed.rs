@@ -2,19 +2,12 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 
 const BETA: f64 = 0.8;
 
-const PA: usize = 16;
 const IN: usize = 4;
 const ALL: usize = 13;
 
-fn teach_input() -> ([[f64; IN / 2]; 4], Vec<f64>) {
+fn teach_input() -> ([[f64; IN / 2]; 4], [f64; 4]) {
     let g_indata_input = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-    let g_indata_tch = g_indata_input
-        .iter()
-        .map(|input| {
-            let c = input.iter().filter(|&&x| x == 1.).count();
-            return if c % 2 == 0 { 0. } else { 1. };
-        })
-        .collect();
+    let g_indata_tch = [0.0, 1.0, 1.0, 0.0];
 
     (g_indata_input, g_indata_tch)
 }
