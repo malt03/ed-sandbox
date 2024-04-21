@@ -8,3 +8,15 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 rand_distr = "0.4.3"
+
+[[bin]]
+name = "sandbox"
+path = "src/sandbox.rs"
+
+[[bin]]
+name = "bp"
+path = "src/bp.rs"
+
+[[bin]]
+name = "ed"
+path = "src/ed.rs"
