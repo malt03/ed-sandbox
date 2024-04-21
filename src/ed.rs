@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
 const MAX: usize = 32;
 const BETA: f64 = 0.8;
@@ -33,8 +33,8 @@ fn teach_input(in_: usize, ot: usize, pa: usize) -> ([[f64; MAX]; MAX], [[f64; M
     (g_indata_input, g_indata_tch)
 }
 
-fn neuro_init(
-    rng: &mut ThreadRng,
+fn neuro_init<R>(
+    rng: &mut R,
     in_: usize,
     ot: usize,
     hd: usize,
@@ -43,7 +43,10 @@ fn neuro_init(
     [f64; MAX + 1],
     [[[f64; MAX + 1]; MAX + 1]; MAX + 1],
     [[f64; MAX + 1]; MAX + 1],
-) {
+)
+where
+    R: Rng,
+{
     let all = in_ + 1 + hd;
 
     let mut ow = [0.; MAX + 1];
@@ -219,7 +222,7 @@ fn neuro_output_write(
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::from_seed([1; 32]);
     let in_ = 4 * 2;
     let pa = 16;
     let ot = 1;
