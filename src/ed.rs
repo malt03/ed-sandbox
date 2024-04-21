@@ -17,8 +17,8 @@ fn teach_input(in_: usize, ot: usize, pa: usize) -> ([[f64; MAX]; MAX], [[f64; M
         }
         for n in 0..ot {
             let mut m = 0;
-            for l in in_ / 2..in_ {
-                if g_indata_input[k][l] != 0. {
+            for l in 0..in_ / 2 {
+                if g_indata_input[k][l] > 0.5 {
                     m += 1;
                 }
             }
@@ -188,11 +188,34 @@ fn neuro_calc(
     ot_in: &mut [[f64; MAX + 1]; MAX + 1],
     ow: &[f64; MAX + 1],
     w_ot_ot: &mut [[[f64; MAX + 1]; MAX + 1]; MAX + 1],
-) {
+) -> [[f64; MAX + 1]; MAX + 1] {
     let ot_ot = neuro_output_calc(in_, ot, all, indata_input, &w_ot_ot, ot_in);
 
     let del_ot = neuro_teach_calc(in_, ot, err, all, indata_tch, &ot_ot);
     neuro_weight_calc(in_, ot, all, ow, w_ot_ot, ot_in, &ot_ot, &del_ot);
+
+    ot_ot
+}
+
+fn neuro_output_write(
+    in_: usize,
+    indata_tch: &[f64; MAX],
+    ot_in: &[[f64; MAX + 1]; MAX + 1],
+    ot_ot: &[[f64; MAX + 1]; MAX + 1],
+) {
+    print!("in:");
+    for k in 1..=in_ / 2 {
+        print!("{:.2} ", ot_in[0][k * 2]);
+    }
+    print!("-> ");
+    print!("{:.5}, {:.2} ", ot_in[0][in_ + 2], indata_tch[0]);
+    print!("hd: ");
+    for k in in_ + 3..=in_ + 6 {
+        if k <= MAX + 1 {
+            print!("{:.4} ", ot_ot[0][k]);
+        }
+    }
+    println!();
 }
 
 fn main() {
@@ -203,6 +226,9 @@ fn main() {
     let hd = 8;
 
     let (g_indata_input, g_indata_tch) = teach_input(in_, ot, pa);
+    for i in 0..pa {
+        println!("{:?}", g_indata_tch[i][0]);
+    }
     let (all, ow, mut w_ot_ot, mut ot_in) = neuro_init(&mut rng, in_, ot, hd);
 
     let mut loop_ = 0;
@@ -212,7 +238,7 @@ fn main() {
     loop {
         loop_ += 1;
         for loopl in 0..pa {
-            neuro_calc(
+            let ot_ot = neuro_calc(
                 in_,
                 ot,
                 all,
@@ -223,6 +249,7 @@ fn main() {
                 &ow,
                 &mut w_ot_ot,
             );
+            neuro_output_write(in_, &g_indata_tch[loopl], &ot_in, &ot_ot);
         }
 
         println!("err: {}", err);
