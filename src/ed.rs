@@ -78,8 +78,8 @@ fn neuro_output_calc(
     indata_input: &[f64; 4],
     w_ot_ot: &[[f64; ALL + 2]; ALL + 2],
     ot_in: &mut [f64; ALL + 2],
-) -> [f64; MAX + 1] {
-    let mut ot_ot = [0.; MAX + 1];
+) -> [f64; ALL + 2] {
+    let mut ot_ot = [0.; ALL + 2];
     for k in 2..=IN + 1 {
         ot_in[k] = indata_input[k / 2 - 1];
     }
@@ -104,7 +104,7 @@ fn neuro_output_calc(
 fn neuro_teach_calc(
     err: &mut f64,
     indata_tch: f64,
-    ot_ot: &[f64; MAX + 1],
+    ot_ot: &[f64; ALL + 2],
 ) -> [[f64; MAX + 1]; MAX + 1] {
     let mut del_ot = [[0.; MAX + 1]; MAX + 1];
 
@@ -136,7 +136,7 @@ fn neuro_weight_calc(
     ow: &Vec<f64>,
     w_ot_ot: &mut [[f64; ALL + 2]; ALL + 2],
     ot_in: &[f64; ALL + 2],
-    ot_ot: &[f64; MAX + 1],
+    ot_ot: &[f64; ALL + 2],
     del_ot: &[[f64; MAX + 1]; MAX + 1],
 ) {
     for k in IN + 2..=ALL + 1 {
@@ -162,7 +162,7 @@ fn neuro_calc(
     ot_in: &mut [f64; ALL + 2],
     ow: &Vec<f64>,
     w_ot_ot: &mut [[f64; ALL + 2]; ALL + 2],
-) -> [f64; MAX + 1] {
+) -> [f64; ALL + 2] {
     let ot_ot = neuro_output_calc(indata_input, w_ot_ot, ot_in);
 
     let del_ot = neuro_teach_calc(err, indata_tch, &ot_ot);
@@ -171,7 +171,7 @@ fn neuro_calc(
     ot_ot
 }
 
-fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2], ot_ot: &[f64; MAX + 1]) {
+fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2], ot_ot: &[f64; ALL + 2]) {
     print!("in:");
     for k in 1..=IN / 2 {
         print!("{:.2} ", ot_in[k * 2]);
