@@ -3,9 +3,9 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const MAX: usize = 32;
 const BETA: f64 = 0.8;
 
-fn teach_input(in_: usize, pa: usize) -> (Vec<Vec<f64>>, [f64; MAX]) {
+fn teach_input(in_: usize, pa: usize) -> (Vec<Vec<f64>>, Vec<f64>) {
     let mut g_indata_input: Vec<_> = (0..pa).map(|_| vec![0.; in_ / 2]).collect();
-    let mut g_indata_tch = [0.; MAX];
+    let mut g_indata_tch = vec![0.; pa];
 
     for k in 0..pa {
         for l in 0..in_ / 2 {
@@ -26,10 +26,6 @@ fn teach_input(in_: usize, pa: usize) -> (Vec<Vec<f64>>, [f64; MAX]) {
         } else {
             g_indata_tch[k] = 1.;
         }
-    }
-
-    for i in &g_indata_input {
-        println!("{:?}", i);
     }
 
     (g_indata_input, g_indata_tch)
