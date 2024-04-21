@@ -55,21 +55,18 @@ fn neuro_output_calc(
     ot_in[0] = BETA;
     ot_in[1] = BETA;
 
-    for k in 2..=IN + 1 {
+    for k in 2..IN + 2 {
         ot_in[k] = indata_input[k / 2 - 1];
     }
-    for k in IN + 2..=ALL + 1 {
-        ot_in[k] = 0.;
-    }
     for _ in 0..2 {
-        for k in IN + 2..=ALL + 1 {
+        for k in IN + 2..ALL + 2 {
             let mut inival = 0.;
-            for m in 0..=ALL + 1 {
+            for m in 0..ALL + 2 {
                 inival += w_ot_ot[k][m] * ot_in[m];
             }
             ot_ot[k] = sigmf(inival);
         }
-        for k in IN + 2..=ALL + 1 {
+        for k in IN + 2..ALL + 2 {
             ot_in[k] = ot_ot[k];
         }
     }
