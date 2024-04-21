@@ -3,31 +3,34 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const MAX: usize = 32;
 const BETA: f64 = 0.8;
 
-fn teach_input(in_: usize, pa: usize) -> ([[f64; 4]; 16], Vec<f64>) {
+const PA: usize = 16;
+const IN: usize = 8;
+
+fn teach_input() -> ([[f64; IN / 2]; PA], Vec<f64>) {
     let g_indata_input = [
-        [0.0, 0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [1.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [1.0, 0.0, 1.0, 0.0],
-        [0.0, 1.0, 1.0, 0.0],
-        [1.0, 1.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [1.0, 0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [1.0, 1.0, 0.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0],
-        [1.0, 0.0, 1.0, 1.0],
-        [0.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0], // 0.0,
+        [1.0, 0.0, 0.0, 0.0], // 1.0,
+        [0.0, 1.0, 0.0, 0.0], // 1.0,
+        [1.0, 1.0, 0.0, 0.0], // 0.0,
+        [0.0, 0.0, 1.0, 0.0], // 1.0,
+        [1.0, 0.0, 1.0, 0.0], // 0.0,
+        [0.0, 1.0, 1.0, 0.0], // 0.0,
+        [1.0, 1.0, 1.0, 0.0], // 1.0,
+        [0.0, 0.0, 0.0, 1.0], // 1.0,
+        [1.0, 0.0, 0.0, 1.0], // 0.0,
+        [0.0, 1.0, 0.0, 1.0], // 0.0,
+        [1.0, 1.0, 0.0, 1.0], // 1.0,
+        [0.0, 0.0, 1.0, 1.0], // 0.0,
+        [1.0, 0.0, 1.0, 1.0], // 1.0,
+        [0.0, 1.0, 1.0, 1.0], // 1.0,
+        [1.0, 1.0, 1.0, 1.0], // 0.0
     ];
 
-    let mut g_indata_tch = vec![0.; pa];
+    let mut g_indata_tch = vec![0.; PA];
 
-    for k in 0..pa {
+    for k in 0..PA {
         let mut c = 0;
-        for l in 0..in_ / 2 {
+        for l in 0..IN / 2 {
             if g_indata_input[k][l] == 1. {
                 c += 1;
             }
@@ -36,12 +39,13 @@ fn teach_input(in_: usize, pa: usize) -> ([[f64; 4]; 16], Vec<f64>) {
         g_indata_tch[k] = if c % 2 == 0 { 0. } else { 1. };
     }
 
+    println!("{:?}", g_indata_tch);
+
     (g_indata_input, g_indata_tch)
 }
 
 fn neuro_init<R>(
     rng: &mut R,
-    in_: usize,
     hd: usize,
 ) -> (
     usize,
@@ -52,7 +56,7 @@ fn neuro_init<R>(
 where
     R: Rng,
 {
-    let all = in_ + 1 + hd;
+    let all = IN + 1 + hd;
 
     let mut ow = [0.; MAX + 1];
     let mut w_ot_ot = [[0.; MAX + 1]; MAX + 1];
@@ -61,16 +65,16 @@ where
     for k in 0..=(all + 1) {
         ow[k] = (((k as i32 + 1) % 2) * 2 - 1) as f64;
     }
-    ow[in_ + 2] = 1.;
-    for k in (in_ + 2)..=(all + 1) {
+    ow[IN + 2] = 1.;
+    for k in (IN + 2)..=(all + 1) {
         for l in 0..=(all + 1) {
-            if l < 2 || l > 1 || k > all + 1 && l >= in_ + 3 {
+            if l < 2 || l > 1 || k > all + 1 && l >= IN + 3 {
                 w_ot_ot[k][l] = rng.gen();
             }
-            if (k > all + 1 && l < in_ + 2 && l >= 2)
-                || (k != l && k > in_ + 2 && l > in_ + 1)
-                || (k > in_ + 1 && l > in_ + 1 && l < in_ + 3)
-                || (l >= 2 && l < in_ + 2 && k >= in_ + 2 && k < in_ + 3)
+            if (k > all + 1 && l < IN + 2 && l >= 2)
+                || (k != l && k > IN + 2 && l > IN + 1)
+                || (k > IN + 1 && l > IN + 1 && l < IN + 3)
+                || (l >= 2 && l < IN + 2 && k >= IN + 2 && k < IN + 3)
                 || (k == l)
             {
                 w_ot_ot[k][l] = 0.;
@@ -90,28 +94,27 @@ fn sigmf(u: f64) -> f64 {
 }
 
 fn neuro_output_calc(
-    in_: usize,
     all: usize,
     indata_input: &[f64; 4],
     w_ot_ot: &[[f64; MAX + 1]; MAX + 1],
     ot_in: &mut [f64; MAX + 1],
 ) -> [f64; MAX + 1] {
     let mut ot_ot = [0.; MAX + 1];
-    for k in 2..=in_ + 1 {
+    for k in 2..=IN + 1 {
         ot_in[k] = indata_input[k / 2 - 1];
     }
-    for k in in_ + 2..=all + 1 {
+    for k in IN + 2..=all + 1 {
         ot_in[k] = 0.;
     }
     for _ in 0..2 {
-        for k in in_ + 2..=all + 1 {
+        for k in IN + 2..=all + 1 {
             let mut inival = 0.;
             for m in 0..=all + 1 {
                 inival += w_ot_ot[k][m] * ot_in[m];
             }
             ot_ot[k] = sigmf(inival);
         }
-        for k in in_ + 2..=all + 1 {
+        for k in IN + 2..=all + 1 {
             ot_in[k] = ot_ot[k];
         }
     }
@@ -119,7 +122,6 @@ fn neuro_output_calc(
 }
 
 fn neuro_teach_calc(
-    in_: usize,
     err: &mut f64,
     all: usize,
     indata_tch: f64,
@@ -127,21 +129,21 @@ fn neuro_teach_calc(
 ) -> [[f64; MAX + 1]; MAX + 1] {
     let mut del_ot = [[0.; MAX + 1]; MAX + 1];
 
-    let wkb = indata_tch - ot_ot[in_ + 2];
+    let wkb = indata_tch - ot_ot[IN + 2];
     *err += wkb.abs();
 
     if wkb > 0. {
-        del_ot[in_ + 2][0] = wkb;
-        del_ot[in_ + 2][1] = 0.;
+        del_ot[IN + 2][0] = wkb;
+        del_ot[IN + 2][1] = 0.;
     } else {
-        del_ot[in_ + 2][0] = 0.;
-        del_ot[in_ + 2][1] = -wkb;
+        del_ot[IN + 2][0] = 0.;
+        del_ot[IN + 2][1] = -wkb;
     }
 
-    let inival1 = del_ot[in_ + 2][0];
-    let inival2 = del_ot[in_ + 2][1];
+    let inival1 = del_ot[IN + 2][0];
+    let inival2 = del_ot[IN + 2][1];
 
-    for k in in_ + 3..=all + 1 {
+    for k in IN + 3..=all + 1 {
         del_ot[k][0] = inival1;
         del_ot[k][1] = inival2;
     }
@@ -152,7 +154,6 @@ fn neuro_teach_calc(
 const ALPHA: f64 = 0.8;
 
 fn neuro_weight_calc(
-    in_: usize,
     all: usize,
     ow: &[f64; MAX + 1],
     w_ot_ot: &mut [[f64; MAX + 1]; MAX + 1],
@@ -160,7 +161,7 @@ fn neuro_weight_calc(
     ot_ot: &[f64; MAX + 1],
     del_ot: &[[f64; MAX + 1]; MAX + 1],
 ) {
-    for k in in_ + 2..=all + 1 {
+    for k in IN + 2..=all + 1 {
         for m in 0..=all + 1 {
             if w_ot_ot[k][m] != 0. {
                 let mut del = ALPHA * ot_in[m];
@@ -177,7 +178,6 @@ fn neuro_weight_calc(
 }
 
 fn neuro_calc(
-    in_: usize,
     all: usize,
     err: &mut f64,
     indata_input: &[f64; 4],
@@ -186,23 +186,23 @@ fn neuro_calc(
     ow: &[f64; MAX + 1],
     w_ot_ot: &mut [[f64; MAX + 1]; MAX + 1],
 ) -> [f64; MAX + 1] {
-    let ot_ot = neuro_output_calc(in_, all, indata_input, w_ot_ot, ot_in);
+    let ot_ot = neuro_output_calc(all, indata_input, w_ot_ot, ot_in);
 
-    let del_ot = neuro_teach_calc(in_, err, all, indata_tch, &ot_ot);
-    neuro_weight_calc(in_, all, ow, w_ot_ot, ot_in, &ot_ot, &del_ot);
+    let del_ot = neuro_teach_calc(err, all, indata_tch, &ot_ot);
+    neuro_weight_calc(all, ow, w_ot_ot, ot_in, &ot_ot, &del_ot);
 
     ot_ot
 }
 
-fn neuro_output_write(in_: usize, indata_tch: f64, ot_in: &[f64; MAX + 1], ot_ot: &[f64; MAX + 1]) {
+fn neuro_output_write(indata_tch: f64, ot_in: &[f64; MAX + 1], ot_ot: &[f64; MAX + 1]) {
     print!("in:");
-    for k in 1..=in_ / 2 {
+    for k in 1..=IN / 2 {
         print!("{:.2} ", ot_in[k * 2]);
     }
     print!("-> ");
-    print!("{:.5}, {:.2} ", ot_in[in_ + 2], indata_tch);
+    print!("{:.5}, {:.2} ", ot_in[IN + 2], indata_tch);
     print!("hd: ");
-    for k in in_ + 3..=in_ + 6 {
+    for k in IN + 3..=IN + 6 {
         if k <= MAX + 1 {
             print!("{:.4} ", ot_ot[k]);
         }
@@ -212,12 +212,10 @@ fn neuro_output_write(in_: usize, indata_tch: f64, ot_in: &[f64; MAX + 1], ot_ot
 
 fn main() {
     let mut rng = StdRng::from_seed([1; 32]);
-    let in_ = 4 * 2;
-    let pa = 16;
     let hd = 8;
 
-    let (g_indata_input, g_indata_tch) = teach_input(in_, pa);
-    let (all, ow, mut w_ot_ot, mut ot_in) = neuro_init(&mut rng, in_, hd);
+    let (g_indata_input, g_indata_tch) = teach_input();
+    let (all, ow, mut w_ot_ot, mut ot_in) = neuro_init(&mut rng, hd);
 
     let mut loop_ = 0;
     let mut err = 0.;
@@ -225,9 +223,8 @@ fn main() {
 
     loop {
         loop_ += 1;
-        for loopl in 0..pa {
+        for loopl in 0..PA {
             let ot_ot = neuro_calc(
-                in_,
                 all,
                 &mut err,
                 &g_indata_input[loopl],
@@ -236,7 +233,7 @@ fn main() {
                 &ow,
                 &mut w_ot_ot,
             );
-            neuro_output_write(in_, g_indata_tch[loopl], &ot_in, &ot_ot);
+            neuro_output_write(g_indata_tch[loopl], &ot_in, &ot_ot);
         }
 
         println!("err: {}", err);
