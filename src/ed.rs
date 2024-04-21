@@ -1,6 +1,5 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
-const MAX: usize = 32;
 const BETA: f64 = 0.8;
 
 const PA: usize = 16;
@@ -176,9 +175,7 @@ fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2], ot_ot: &[f64; ALL
     print!("{:.5}, {:.2} ", ot_in[IN + 2], indata_tch);
     print!("hd: ");
     for k in IN + 3..=IN + 6 {
-        if k <= MAX + 1 {
-            print!("{:.4} ", ot_ot[k]);
-        }
+        print!("{:.4} ", ot_ot[k]);
     }
     println!();
 }
