@@ -3,14 +3,31 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const MAX: usize = 32;
 const BETA: f64 = 0.8;
 
-fn teach_input(in_: usize, pa: usize) -> (Vec<Vec<f64>>, Vec<f64>) {
-    let mut g_indata_input: Vec<_> = (0..pa).map(|_| vec![0.; in_ / 2]).collect();
+fn teach_input(in_: usize, pa: usize) -> ([[f64; 4]; 16], Vec<f64>) {
+    let g_indata_input = [
+        [0.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [1.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 1.0, 0.0],
+        [0.0, 1.0, 1.0, 0.0],
+        [1.0, 1.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 0.0, 1.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+    ];
+
     let mut g_indata_tch = vec![0.; pa];
 
     for k in 0..pa {
         let mut c = 0;
         for l in 0..in_ / 2 {
-            g_indata_input[k][l] = if k & (1 << l) != 0 { 1. } else { 0. };
             if g_indata_input[k][l] == 1. {
                 c += 1;
             }
@@ -75,7 +92,7 @@ fn sigmf(u: f64) -> f64 {
 fn neuro_output_calc(
     in_: usize,
     all: usize,
-    indata_input: &Vec<f64>,
+    indata_input: &[f64; 4],
     w_ot_ot: &[[f64; MAX + 1]; MAX + 1],
     ot_in: &mut [f64; MAX + 1],
 ) -> [f64; MAX + 1] {
@@ -163,7 +180,7 @@ fn neuro_calc(
     in_: usize,
     all: usize,
     err: &mut f64,
-    indata_input: &Vec<f64>,
+    indata_input: &[f64; 4],
     indata_tch: f64,
     ot_in: &mut [f64; MAX + 1],
     ow: &[f64; MAX + 1],
