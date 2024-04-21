@@ -8,24 +8,15 @@ fn teach_input(in_: usize, pa: usize) -> (Vec<Vec<f64>>, Vec<f64>) {
     let mut g_indata_tch = vec![0.; pa];
 
     for k in 0..pa {
+        let mut c = 0;
         for l in 0..in_ / 2 {
-            if k & (1 << l) != 0 {
-                g_indata_input[k][l] = 1.;
-            } else {
-                g_indata_input[k][l] = 0.;
+            g_indata_input[k][l] = if k & (1 << l) != 0 { 1. } else { 0. };
+            if g_indata_input[k][l] == 1. {
+                c += 1;
             }
         }
-        let mut m = 0;
-        for l in 0..in_ / 2 {
-            if g_indata_input[k][l] > 0.5 {
-                m += 1;
-            }
-        }
-        if m % 2 == 0 {
-            g_indata_tch[k] = 0.;
-        } else {
-            g_indata_tch[k] = 1.;
-        }
+
+        g_indata_tch[k] = if c % 2 == 0 { 0. } else { 1. };
     }
 
     (g_indata_input, g_indata_tch)
