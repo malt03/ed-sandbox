@@ -37,7 +37,7 @@ fn teach_input() -> ([[f64; IN / 2]; PA], Vec<f64>) {
     (g_indata_input, g_indata_tch)
 }
 
-fn neuro_init<R>(rng: &mut R) -> (Vec<f64>, [[f64; MAX + 1]; MAX + 1], [f64; MAX + 1])
+fn neuro_init<R>(rng: &mut R) -> (Vec<f64>, [[f64; ALL + 2]; ALL + 2], [f64; ALL + 2])
 where
     R: Rng,
 {
@@ -45,25 +45,24 @@ where
         .map(|k| if k % 2 == 0 { 1. } else { -1. })
         .collect();
 
-    let mut w_ot_ot = [[0.; MAX + 1]; MAX + 1];
-    let mut ot_in = [0.; MAX + 1];
+    let mut w_ot_ot = [[0.; ALL + 2]; ALL + 2];
+    let mut ot_in = [0.; ALL + 2];
 
     for k in (IN + 2)..=(ALL + 1) {
         for l in 0..=(ALL + 1) {
-            if l < 2 || l > 1 || k > ALL + 1 && l >= IN + 3 {
-                w_ot_ot[k][l] = rng.gen();
+            if l < 2 || l > 1 {
+                w_ot_ot[k][l] = rng.gen::<f64>() * ow[l] * ow[k];
             }
-            if (k > ALL + 1 && l < IN + 2 && l >= 2)
-                || (k != l && k > IN + 2 && l > IN + 1)
+            if (k != l && k > IN + 2 && l > IN + 1)
                 || (k > IN + 1 && l > IN + 1 && l < IN + 3)
                 || (l >= 2 && l < IN + 2 && k >= IN + 2 && k < IN + 3)
                 || (k == l)
             {
                 w_ot_ot[k][l] = 0.;
             }
-            w_ot_ot[k][l] *= ow[l] * ow[k];
         }
     }
+
     ot_in[0] = BETA;
     ot_in[1] = BETA;
 
@@ -77,8 +76,8 @@ fn sigmf(u: f64) -> f64 {
 
 fn neuro_output_calc(
     indata_input: &[f64; 4],
-    w_ot_ot: &[[f64; MAX + 1]; MAX + 1],
-    ot_in: &mut [f64; MAX + 1],
+    w_ot_ot: &[[f64; ALL + 2]; ALL + 2],
+    ot_in: &mut [f64; ALL + 2],
 ) -> [f64; MAX + 1] {
     let mut ot_ot = [0.; MAX + 1];
     for k in 2..=IN + 1 {
@@ -135,8 +134,8 @@ const ALPHA: f64 = 0.8;
 
 fn neuro_weight_calc(
     ow: &Vec<f64>,
-    w_ot_ot: &mut [[f64; MAX + 1]; MAX + 1],
-    ot_in: &[f64; MAX + 1],
+    w_ot_ot: &mut [[f64; ALL + 2]; ALL + 2],
+    ot_in: &[f64; ALL + 2],
     ot_ot: &[f64; MAX + 1],
     del_ot: &[[f64; MAX + 1]; MAX + 1],
 ) {
@@ -160,9 +159,9 @@ fn neuro_calc(
     err: &mut f64,
     indata_input: &[f64; 4],
     indata_tch: f64,
-    ot_in: &mut [f64; MAX + 1],
+    ot_in: &mut [f64; ALL + 2],
     ow: &Vec<f64>,
-    w_ot_ot: &mut [[f64; MAX + 1]; MAX + 1],
+    w_ot_ot: &mut [[f64; ALL + 2]; ALL + 2],
 ) -> [f64; MAX + 1] {
     let ot_ot = neuro_output_calc(indata_input, w_ot_ot, ot_in);
 
@@ -172,7 +171,7 @@ fn neuro_calc(
     ot_ot
 }
 
-fn neuro_output_write(indata_tch: f64, ot_in: &[f64; MAX + 1], ot_ot: &[f64; MAX + 1]) {
+fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2], ot_ot: &[f64; MAX + 1]) {
     print!("in:");
     for k in 1..=IN / 2 {
         print!("{:.2} ", ot_in[k * 2]);
