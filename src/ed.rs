@@ -28,6 +28,14 @@ where
         }
     }
 
+    // dump w_ot_ot
+    for k in 0..(ALL - IN) {
+        for l in 0..(ALL + 2) {
+            print!("{:.2} ", w_ot_ot[k][l]);
+        }
+        println!();
+    }
+
     (ow, w_ot_ot)
 }
 
@@ -64,23 +72,23 @@ fn neuro_output_calc(
     (ot_in, ot_ot)
 }
 
-fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([[f64; 2]; ALL + 2], f64) {
-    let mut del_ot = [[0.; 2]; ALL + 2];
+fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([[f64; 2]; ALL - IN], f64) {
+    let mut del_ot = [[0.; 2]; ALL - IN];
 
     let wkb = indata_tch - ot_ot[0];
 
     if wkb > 0. {
-        del_ot[IN + 2][0] = wkb;
-        del_ot[IN + 2][1] = 0.;
+        del_ot[0][0] = wkb;
+        del_ot[0][1] = 0.;
     } else {
-        del_ot[IN + 2][0] = 0.;
-        del_ot[IN + 2][1] = -wkb;
+        del_ot[0][0] = 0.;
+        del_ot[0][1] = -wkb;
     }
 
-    let inival1 = del_ot[IN + 2][0];
-    let inival2 = del_ot[IN + 2][1];
+    let inival1 = del_ot[0][0];
+    let inival2 = del_ot[0][1];
 
-    for k in IN + 3..ALL + 2 {
+    for k in 1..ALL - IN {
         del_ot[k][0] = inival1;
         del_ot[k][1] = inival2;
     }
@@ -95,7 +103,7 @@ fn neuro_weight_calc(
     w_ot_ot: &mut [[f64; ALL + 2]; ALL - IN],
     ot_in: &[f64; ALL + 2],
     ot_ot: &[f64; ALL - IN],
-    del_ot: &[[f64; 2]; ALL + 2],
+    del_ot: &[[f64; 2]; ALL - IN],
 ) {
     for k in 0..ALL - IN {
         for m in 0..ALL + 2 {
@@ -104,9 +112,9 @@ fn neuro_weight_calc(
                 del *= ot_ot[k].abs();
                 del *= 1. - ot_ot[k].abs();
                 if ow[m] > 0. {
-                    w_ot_ot[k][m] += del * del_ot[k + IN + 2][0] * ow[m] * ow[k + IN + 2];
+                    w_ot_ot[k][m] += del * del_ot[k][0] * ow[m] * ow[k + IN + 2];
                 } else {
-                    w_ot_ot[k][m] += del * del_ot[k + IN + 2][1] * ow[m] * ow[k + IN + 2];
+                    w_ot_ot[k][m] += del * del_ot[k][1] * ow[m] * ow[k + IN + 2];
                 }
             }
         }
