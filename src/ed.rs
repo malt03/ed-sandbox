@@ -3,7 +3,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const BETA: f64 = 0.8;
 
 const IN: usize = 4;
-const ALL: usize = 10;
+const ALL: usize = 9;
 
 fn teach_input() -> ([[f64; IN / 2]; IN], [f64; IN]) {
     let g_indata_input = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
@@ -72,25 +72,17 @@ fn neuro_output_calc(
     (ot_in, ot_ot)
 }
 
-fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([[f64; 2]; ALL - IN], f64) {
-    let mut del_ot = [[0.; 2]; ALL - IN];
+fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([f64; 2], f64) {
+    let mut del_ot = [0.; 2];
 
     let wkb = indata_tch - ot_ot[0];
 
     if wkb > 0. {
-        del_ot[0][0] = wkb;
-        del_ot[0][1] = 0.;
+        del_ot[0] = wkb;
+        del_ot[1] = 0.;
     } else {
-        del_ot[0][0] = 0.;
-        del_ot[0][1] = -wkb;
-    }
-
-    let inival1 = del_ot[0][0];
-    let inival2 = del_ot[0][1];
-
-    for k in 1..ALL - IN {
-        del_ot[k][0] = inival1;
-        del_ot[k][1] = inival2;
+        del_ot[0] = 0.;
+        del_ot[1] = -wkb;
     }
 
     (del_ot, wkb.abs())
@@ -103,7 +95,7 @@ fn neuro_weight_calc(
     w_ot_ot: &mut [[f64; ALL + 2]; ALL - IN],
     ot_in: &[f64; ALL + 2],
     ot_ot: &[f64; ALL - IN],
-    del_ot: &[[f64; 2]; ALL - IN],
+    del_ot: &[f64; 2],
 ) {
     for k in 0..ALL - IN {
         for m in 0..ALL + 2 {
@@ -112,9 +104,9 @@ fn neuro_weight_calc(
                 del *= ot_ot[k].abs();
                 del *= 1. - ot_ot[k].abs();
                 if ow[m] > 0. {
-                    w_ot_ot[k][m] += del * del_ot[k][0] * ow[m] * ow[k + IN + 2];
+                    w_ot_ot[k][m] += del * del_ot[0] * ow[m] * ow[k + IN + 2];
                 } else {
-                    w_ot_ot[k][m] += del * del_ot[k][1] * ow[m] * ow[k + IN + 2];
+                    w_ot_ot[k][m] += del * del_ot[1] * ow[m] * ow[k + IN + 2];
                 }
             }
         }
