@@ -3,7 +3,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const BETA: f64 = 0.8;
 
 const IN: usize = 4;
-const ALL: usize = 13;
+const ALL: usize = 10;
 
 fn teach_input() -> ([[f64; IN / 2]; IN], [f64; IN]) {
     let g_indata_input = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
@@ -80,7 +80,7 @@ fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([[f64; 2]; ALL
     let inival1 = del_ot[IN + 2][0];
     let inival2 = del_ot[IN + 2][1];
 
-    for k in IN + 3..=ALL + 1 {
+    for k in IN + 3..ALL + 2 {
         del_ot[k][0] = inival1;
         del_ot[k][1] = inival2;
     }
@@ -118,25 +118,21 @@ fn neuro_calc(
     indata_tch: f64,
     ow: &Vec<f64>,
     w_ot_ot: &mut [[f64; ALL + 2]; ALL - IN],
-) -> (f64, [f64; ALL + 2], [f64; ALL - IN]) {
+) -> (f64, [f64; ALL + 2]) {
     let (ot_in, ot_ot) = neuro_output_calc(indata_input, w_ot_ot);
     let (del_ot, err) = neuro_teach_calc(indata_tch, &ot_ot);
     neuro_weight_calc(ow, w_ot_ot, &ot_in, &ot_ot, &del_ot);
 
-    (err, ot_in, ot_ot)
+    (err, ot_in)
 }
 
-fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2], ot_ot: &[f64; ALL - IN]) {
+fn neuro_output_write(indata_tch: f64, ot_in: &[f64; ALL + 2]) {
     print!("in:");
     for k in 1..=IN / 2 {
         print!("{:.2} ", ot_in[k * 2]);
     }
     print!("-> ");
     print!("{:.5}, {:.2} ", ot_in[IN + 2], indata_tch);
-    print!("hd: ");
-    for k in 1..=4 {
-        print!("{:.4} ", ot_ot[k]);
-    }
     println!();
 }
 
@@ -152,13 +148,13 @@ fn main() {
     loop {
         i += 1;
         for loopl in 0..IN {
-            let (e, ot_in, ot_ot) = neuro_calc(
+            let (e, ot_in) = neuro_calc(
                 &g_indata_input[loopl],
                 g_indata_tch[loopl],
                 &ow,
                 &mut w_ot_ot,
             );
-            neuro_output_write(g_indata_tch[loopl], &ot_in, &ot_ot);
+            neuro_output_write(g_indata_tch[loopl], &ot_in);
             err += e;
         }
 
