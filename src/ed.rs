@@ -99,15 +99,13 @@ fn neuro_weight_calc(
 ) {
     for k in 0..ALL - IN {
         for m in 0..ALL + 2 {
-            if w_ot_ot[k][m] != 0. {
-                let mut del = ALPHA * ot_in[m];
-                del *= ot_ot[k].abs();
-                del *= 1. - ot_ot[k].abs();
-                if ow[m] > 0. {
-                    w_ot_ot[k][m] += del * del_ot[0] * ow[m] * ow[k + IN + 2];
-                } else {
-                    w_ot_ot[k][m] += del * del_ot[1] * ow[m] * ow[k + IN + 2];
-                }
+            let mut del = ALPHA * ot_in[m];
+            del *= ot_ot[k].abs();
+            del *= 1. - ot_ot[k].abs();
+            if ow[m] > 0. {
+                w_ot_ot[k][m] += del * del_ot[0] * ow[m] * ow[k + IN + 2];
+            } else {
+                w_ot_ot[k][m] += del * del_ot[1] * ow[m] * ow[k + IN + 2];
             }
         }
     }
