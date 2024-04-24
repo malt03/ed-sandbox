@@ -24,17 +24,7 @@ where
 
     for k in 0..(ALL - IN) {
         for l in 0..(ALL + 2) {
-            if l < 2 || l > 1 {
-                w_ot_ot[k][l] = rng.gen::<f64>() * ow[l] * ow[k + IN + 2];
-            }
-            let m = k + IN + 2;
-            if (m != l && m > IN + 2 && l > IN + 1)
-                || (l > IN + 1 && l < IN + 3)
-                || (l >= 2 && l < IN + 2 && m < IN + 3)
-                || (m == l)
-            {
-                w_ot_ot[k][l] = 0.;
-            }
+            w_ot_ot[k][l] = rng.gen::<f64>() * ow[l] * ow[k + IN + 2];
         }
     }
 
