@@ -82,7 +82,7 @@ fn neuro_teach_calc(indata_tch: f64, ot_ot: &[f64; ALL - IN]) -> ([f64; 2], f64)
         del_ot[1] = 0.;
     } else {
         del_ot[0] = 0.;
-        del_ot[1] = -wkb;
+        del_ot[1] = wkb;
     }
 
     (del_ot, wkb.abs())
@@ -98,12 +98,13 @@ fn neuro_weight_calc(
     del_ot: &[f64; 2],
 ) {
     for k in 0..ALL - IN {
+        let tmp = ot_ot[k].abs() * (1. - ot_ot[k].abs());
         for m in 0..ALL + 2 {
-            let del = ALPHA * ot_in[m] * ot_ot[k].abs() * (1. - ot_ot[k].abs());
+            let del = ALPHA * ot_in[m] * tmp;
             if ow[m] > 0. {
                 w_ot_ot[k][m] += del * del_ot[0] * ow[m] * ow[k + IN + 2];
             } else {
-                w_ot_ot[k][m] += del * del_ot[1] * ow[m] * ow[k + IN + 2];
+                w_ot_ot[k][m] -= del * del_ot[1] * ow[m] * ow[k + IN + 2];
             }
         }
     }
