@@ -1,8 +1,8 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
+use std::f64::consts::E;
 
-fn sigmoid(u: f64) -> f64 {
-    let u0 = 0.4;
-    1. / (1. + (-2. * u / u0).exp())
+fn sigmoid(x: f64) -> f64 {
+    1.0 / (1.0 + E.powf(-x))
 }
 
 fn n(i: usize, j: usize) -> f64 {
