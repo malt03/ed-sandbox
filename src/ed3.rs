@@ -65,6 +65,7 @@ impl Neuron {
 
 struct SingleOutputLayer {
     neurons: Vec<Neuron>,
+    last_inputs: Vec<f64>,
     last_sum: f64,
 }
 
@@ -76,18 +77,20 @@ impl SingleOutputLayer {
         let neurons: Vec<_> = (0..input).map(|j| Neuron::new(rng, index, j)).collect();
         SingleOutputLayer {
             neurons,
+            last_inputs: Vec::new(),
             last_sum: 0.,
         }
     }
 
-    fn forward(&mut self, input: Vec<f64>) -> f64 {
+    fn forward(&mut self, inputs: Vec<f64>) -> f64 {
         self.last_sum = self
             .neurons
             .iter()
-            .zip(input.iter())
+            .zip(inputs.iter())
             .map(|(neuron, input)| neuron.forward(*input))
             .sum();
 
+        self.last_inputs = inputs;
         sigmoid(self.last_sum)
     }
 
@@ -95,13 +98,14 @@ impl SingleOutputLayer {
         let delta = sigmoid_derivative(self.last_sum) * loss;
 
         for (i, neuron) in self.neurons.iter_mut().enumerate() {
+            let last_input = self.last_inputs[i];
             if loss > 0. {
                 if i % 2 == 0 {
-                    neuron.append_weight(delta);
+                    neuron.append_weight(delta * last_input);
                 }
             } else {
                 if i % 2 == 1 {
-                    neuron.append_weight(-delta);
+                    neuron.append_weight(-delta * last_input);
                 }
             }
         }
@@ -124,10 +128,10 @@ impl Layer {
         }
     }
 
-    fn forward(&mut self, input: Vec<f64>) -> Vec<f64> {
+    fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
         self.inner_layers
             .iter_mut()
-            .map(|layer| layer.forward(input.clone()))
+            .map(|layer| layer.forward(inputs.clone()))
             .collect()
     }
 
@@ -139,7 +143,7 @@ impl Layer {
 }
 
 fn main() {
-    let input = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]];
+    let inputs = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]];
     let targets = [0., 1., 1., 0.];
 
     let mut rng = StdRng::seed_from_u64(0);
@@ -151,16 +155,16 @@ fn main() {
         count += 1;
         let mut err = 0.;
 
-        for (&input, &target) in input.iter().zip(targets.iter()) {
+        for (&inputs, &target) in inputs.iter().zip(targets.iter()) {
             let output =
-                layer1.forward(layer0.forward(vec![input[0], input[0], input[1], input[1]]));
+                layer1.forward(layer0.forward(vec![inputs[0], inputs[0], inputs[1], inputs[1]]));
             let loss = target - output[0];
             layer1.backward(loss);
             layer0.backward(loss);
 
             println!(
                 "{}, {} -> {:.5}, {:.0}",
-                input[0], input[1], output[0], target,
+                inputs[0], inputs[1], output[0], target,
             );
 
             err += loss.abs();
