@@ -9,7 +9,6 @@ fn sigmoid_derivative(x: f64) -> f64 {
     sigmoid(x) * (1.0 - sigmoid(x))
 }
 
-#[derive(Debug, PartialEq, Eq)]
 enum NeuronType {
     Excitatory,
     Inhibitory,
@@ -35,7 +34,6 @@ impl NeuronType {
     }
 }
 
-#[derive(Debug)]
 struct Neuron {
     neuron_type: NeuronType,
     weight: f64,
@@ -65,10 +63,53 @@ impl Neuron {
     }
 }
 
-#[derive(Debug)]
+struct SingleOutputLayer {
+    neurons: Vec<Neuron>,
+    last_sum: f64,
+}
+
+impl SingleOutputLayer {
+    fn new<R>(rng: &mut R, index: usize, input: usize) -> Self
+    where
+        R: Rng,
+    {
+        let neurons: Vec<_> = (0..input).map(|j| Neuron::new(rng, index, j)).collect();
+        SingleOutputLayer {
+            neurons,
+            last_sum: 0.,
+        }
+    }
+
+    fn forward(&mut self, input: Vec<f64>) -> f64 {
+        self.last_sum = self
+            .neurons
+            .iter()
+            .zip(input.iter())
+            .map(|(neuron, input)| neuron.forward(*input))
+            .sum();
+
+        sigmoid(self.last_sum)
+    }
+
+    fn backward(&mut self, loss: f64) {
+        let delta = sigmoid_derivative(self.last_sum) * loss;
+
+        for (i, neuron) in self.neurons.iter_mut().enumerate() {
+            if loss > 0. {
+                if i % 2 == 0 {
+                    neuron.append_weight(delta);
+                }
+            } else {
+                if i % 2 == 1 {
+                    neuron.append_weight(-delta);
+                }
+            }
+        }
+    }
+}
+
 struct Layer {
-    neurons: Vec<Vec<Neuron>>,
-    last_sums: Vec<f64>,
+    inner_layers: Vec<SingleOutputLayer>,
 }
 
 impl Layer {
@@ -76,46 +117,23 @@ impl Layer {
     where
         R: Rng,
     {
-        let neurons: Vec<Vec<_>> = (0..output)
-            .map(|i| (0..input).map(|j| Neuron::new(rng, i, j)).collect())
-            .collect();
         Layer {
-            neurons,
-            last_sums: Vec::new(),
+            inner_layers: (0..output)
+                .map(|i| SingleOutputLayer::new(rng, i, input))
+                .collect(),
         }
     }
 
     fn forward(&mut self, input: Vec<f64>) -> Vec<f64> {
-        self.last_sums = self
-            .neurons
-            .iter()
-            .map(|neurons| {
-                neurons
-                    .iter()
-                    .zip(input.iter())
-                    .map(|(neuron, input)| neuron.forward(*input))
-                    .sum()
-            })
-            .collect();
-
-        self.last_sums.iter().map(|sum| sigmoid(*sum)).collect()
+        self.inner_layers
+            .iter_mut()
+            .map(|layer| layer.forward(input.clone()))
+            .collect()
     }
 
     fn backward(&mut self, loss: f64) {
-        for (neurons, last_sum) in self.neurons.iter_mut().zip(self.last_sums.iter()) {
-            let delta = sigmoid_derivative(*last_sum) * loss;
-
-            for (i, neuron) in neurons.iter_mut().enumerate() {
-                if loss > 0. {
-                    if i % 2 == 0 {
-                        neuron.append_weight(delta);
-                    }
-                } else {
-                    if i % 2 == 1 {
-                        neuron.append_weight(-delta);
-                    }
-                }
-            }
+        for layer in self.inner_layers.iter_mut() {
+            layer.backward(loss);
         }
     }
 }
