@@ -6,7 +6,8 @@ fn sigmoid(x: f64) -> f64 {
 }
 
 fn sigmoid_derivative(x: f64) -> f64 {
-    sigmoid(x) * (1.0 - sigmoid(x))
+    let s = sigmoid(x);
+    s * (1.0 - s)
 }
 
 enum NeuronType {
