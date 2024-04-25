@@ -52,25 +52,25 @@ fn neuro_calc(
 
     for i in 0..8 {
         for j in 0..4 {
-            let delta = input0[j] * input1[i].abs() * (1. - input1[i].abs());
+            let delta = input0[j] * input1[i] * (1. - input1[i]) * loss;
             if loss > 0. {
                 if j % 2 == 0 {
-                    weight0[i][j] += delta * loss * n(i, j);
+                    weight0[i][j] += delta * n(i, j);
                 }
             } else {
                 if j % 2 == 1 {
-                    weight0[i][j] -= delta * loss * n(i, j);
+                    weight0[i][j] -= delta * n(i, j);
                 }
             }
         }
-        let delta = input1[i] * output.abs() * (1. - output.abs());
+        let delta = input1[i] * output * (1. - output) * loss;
         if loss > 0. {
             if i % 2 == 0 {
-                weight1[i] += delta * loss * n(i, 0);
+                weight1[i] += delta * n(i, 0);
             }
         } else {
             if i % 2 == 1 {
-                weight1[i] -= delta * loss * n(i, 0);
+                weight1[i] -= delta * n(i, 0);
             }
         }
     }
