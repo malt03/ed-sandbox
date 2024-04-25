@@ -66,7 +66,7 @@ impl Neuron {
 
 struct SingleOutputLayer {
     neurons: Vec<Neuron>,
-    last_sum: f64,
+    delta: f64,
 }
 
 impl SingleOutputLayer {
@@ -75,35 +75,32 @@ impl SingleOutputLayer {
         R: Rng,
     {
         let neurons: Vec<_> = (0..input).map(|j| Neuron::new(rng, index, j)).collect();
-        SingleOutputLayer {
-            neurons,
-            last_sum: 0.,
-        }
+        SingleOutputLayer { neurons, delta: 0. }
     }
 
     fn forward(&mut self, inputs: &Vec<f64>) -> f64 {
-        self.last_sum = self
+        let sum = self
             .neurons
             .iter()
             .zip(inputs.iter())
             .map(|(neuron, input)| neuron.forward(*input))
             .sum();
 
-        sigmoid(self.last_sum)
+        self.delta = sigmoid_derivative(sum);
+        sigmoid(sum)
     }
 
     fn backward(&mut self, loss: f64, last_inputs: &Vec<f64>) {
-        let delta = sigmoid_derivative(self.last_sum) * loss;
+        let delta = self.delta * loss;
 
         for (i, neuron) in self.neurons.iter_mut().enumerate() {
-            let delta = delta * last_inputs[i];
             if loss > 0. {
                 if i % 2 == 0 {
-                    neuron.append_weight(delta);
+                    neuron.append_weight(delta * last_inputs[i]);
                 }
             } else {
                 if i % 2 == 1 {
-                    neuron.append_weight(-delta);
+                    neuron.append_weight(-delta * last_inputs[i]);
                 }
             }
         }
