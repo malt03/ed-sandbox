@@ -9,15 +9,15 @@ fn n(i: usize, j: usize) -> f64 {
     (if i % 2 == 0 { 1. } else { -1. }) * (if j % 2 == 0 { 1. } else { -1. })
 }
 
-fn neuro_init<R>(rng: &mut R) -> ([[f64; 6]; 8], [f64; 8])
+fn neuro_init<R>(rng: &mut R) -> ([[f64; 4]; 8], [f64; 8])
 where
     R: Rng,
 {
-    let mut weight0 = [[0.; 6]; 8];
+    let mut weight0 = [[0.; 4]; 8];
     let mut weight1 = [0.; 8];
 
     for i in 0..8 {
-        for j in 0..6 {
+        for j in 0..4 {
             weight0[i][j] = rng.gen::<f64>() * n(i, j);
         }
         weight1[i] = rng.gen::<f64>() * n(i, 0);
@@ -26,20 +26,17 @@ where
     (weight0, weight1)
 }
 
-const ALPHA: f64 = 0.8;
-const BETA: f64 = 0.8;
-
 fn neuro_calc(
-    weight0: &mut [[f64; 6]; 8],
+    weight0: &mut [[f64; 4]; 8],
     weight1: &mut [f64; 8],
     input: &[f64; 2],
     target: f64,
 ) -> (f64, f64) {
-    let input0 = [BETA, BETA, input[0], input[0], input[1], input[1]];
+    let input0 = [input[0], input[0], input[1], input[1]];
     let mut input1 = [0.; 8];
 
     for i in 0..8 {
-        for j in 0..6 {
+        for j in 0..4 {
             input1[i] += weight0[i][j] * input0[j];
         }
         input1[i] = sigmoid(input1[i]);
@@ -54,8 +51,8 @@ fn neuro_calc(
     let loss = target - output;
 
     for i in 0..8 {
-        for j in 0..6 {
-            let delta = ALPHA * input0[j] * input1[i].abs() * (1. - input1[i].abs());
+        for j in 0..4 {
+            let delta = input0[j] * input1[i].abs() * (1. - input1[i].abs());
             if loss > 0. {
                 if j % 2 == 0 {
                     weight0[i][j] += delta * loss * n(i, j);
@@ -66,7 +63,7 @@ fn neuro_calc(
                 }
             }
         }
-        let delta = ALPHA * input1[i] * output.abs() * (1. - output.abs());
+        let delta = input1[i] * output.abs() * (1. - output.abs());
         if loss > 0. {
             if i % 2 == 0 {
                 weight1[i] += delta * loss * n(i, 0);
