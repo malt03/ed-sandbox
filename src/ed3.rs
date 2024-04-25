@@ -65,7 +65,6 @@ impl Neuron {
 
 struct SingleOutputLayer {
     neurons: Vec<Neuron>,
-    last_inputs: Vec<f64>,
     last_sum: f64,
 }
 
@@ -77,12 +76,11 @@ impl SingleOutputLayer {
         let neurons: Vec<_> = (0..input).map(|j| Neuron::new(rng, index, j)).collect();
         SingleOutputLayer {
             neurons,
-            last_inputs: Vec::new(),
             last_sum: 0.,
         }
     }
 
-    fn forward(&mut self, inputs: Vec<f64>) -> f64 {
+    fn forward(&mut self, inputs: &Vec<f64>) -> f64 {
         self.last_sum = self
             .neurons
             .iter()
@@ -90,22 +88,21 @@ impl SingleOutputLayer {
             .map(|(neuron, input)| neuron.forward(*input))
             .sum();
 
-        self.last_inputs = inputs;
         sigmoid(self.last_sum)
     }
 
-    fn backward(&mut self, loss: f64) {
+    fn backward(&mut self, loss: f64, last_inputs: &Vec<f64>) {
         let delta = sigmoid_derivative(self.last_sum) * loss;
 
         for (i, neuron) in self.neurons.iter_mut().enumerate() {
-            let last_input = self.last_inputs[i];
+            let delta = delta * last_inputs[i];
             if loss > 0. {
                 if i % 2 == 0 {
-                    neuron.append_weight(delta * last_input);
+                    neuron.append_weight(delta);
                 }
             } else {
                 if i % 2 == 1 {
-                    neuron.append_weight(-delta * last_input);
+                    neuron.append_weight(-delta);
                 }
             }
         }
@@ -114,6 +111,7 @@ impl SingleOutputLayer {
 
 struct Layer {
     inner_layers: Vec<SingleOutputLayer>,
+    last_inputs: Vec<f64>,
 }
 
 impl Layer {
@@ -125,19 +123,24 @@ impl Layer {
             inner_layers: (0..output)
                 .map(|i| SingleOutputLayer::new(rng, i, input))
                 .collect(),
+            last_inputs: Vec::new(),
         }
     }
 
     fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
-        self.inner_layers
+        let output = self
+            .inner_layers
             .iter_mut()
-            .map(|layer| layer.forward(inputs.clone()))
-            .collect()
+            .map(|layer| layer.forward(&inputs))
+            .collect();
+        self.last_inputs = inputs;
+
+        output
     }
 
     fn backward(&mut self, loss: f64) {
         for layer in self.inner_layers.iter_mut() {
-            layer.backward(loss);
+            layer.backward(loss, &self.last_inputs);
         }
     }
 }
@@ -148,7 +151,8 @@ fn main() {
 
     let mut rng = StdRng::seed_from_u64(0);
     let mut layer0 = Layer::new(&mut rng, 4, 8);
-    let mut layer1 = Layer::new(&mut rng, 8, 1);
+    let mut layer1 = Layer::new(&mut rng, 8, 8);
+    let mut layer2 = Layer::new(&mut rng, 8, 1);
 
     let mut count = 0;
     loop {
@@ -156,9 +160,11 @@ fn main() {
         let mut err = 0.;
 
         for (&inputs, &target) in inputs.iter().zip(targets.iter()) {
-            let output =
-                layer1.forward(layer0.forward(vec![inputs[0], inputs[0], inputs[1], inputs[1]]));
+            let output = layer2.forward(
+                layer1.forward(layer0.forward(vec![inputs[0], inputs[0], inputs[1], inputs[1]])),
+            );
             let loss = target - output[0];
+            layer2.backward(loss);
             layer1.backward(loss);
             layer0.backward(loss);
 
@@ -171,7 +177,7 @@ fn main() {
         }
 
         println!("err: {:.5}", err);
-        if err < 0.1 {
+        if err < 1e-3 {
             break;
         }
     }
