@@ -167,9 +167,9 @@ impl XOR {
     }
 
     fn backward(&mut self, loss: f64) {
-        self.layer2.backward(loss);
-        self.layer1.backward(loss);
         self.layer0.backward(loss);
+        self.layer1.backward(loss);
+        self.layer2.backward(loss);
     }
 }
 
@@ -184,7 +184,7 @@ fn main() {
 
         for (inputs, &target) in inputs.iter().zip(targets.iter()) {
             let output = xor.forward(inputs);
-            let loss = target - output;
+            let loss = (target - output) * 2.;
             xor.backward(loss);
 
             println!(
