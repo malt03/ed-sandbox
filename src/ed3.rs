@@ -1,5 +1,5 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
-use std::f64::consts::E;
+use std::{f64::consts::E, vec};
 
 fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + E.powf(-x))
@@ -143,42 +143,58 @@ impl Layer {
     }
 }
 
+struct XOR {
+    layer0: Layer,
+    layer1: Layer,
+    layer2: Layer,
+}
+
+impl XOR {
+    fn new() -> Self {
+        let mut rng = StdRng::seed_from_u64(0);
+        XOR {
+            layer0: Layer::new(&mut rng, 4, 8),
+            layer1: Layer::new(&mut rng, 8, 8),
+            layer2: Layer::new(&mut rng, 8, 1),
+        }
+    }
+
+    fn forward(&mut self, inputs: &[f64]) -> f64 {
+        let x = vec![inputs[0], inputs[0], inputs[1], inputs[1]];
+        let x = self.layer0.forward(x);
+        let x = self.layer1.forward(x);
+        self.layer2.forward(x)[0]
+    }
+
+    fn backward(&mut self, loss: f64) {
+        self.layer2.backward(loss);
+        self.layer1.backward(loss);
+        self.layer0.backward(loss);
+    }
+}
+
 fn main() {
     let inputs = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]];
     let targets = [0., 1., 1., 0.];
 
-    let mut rng = StdRng::seed_from_u64(0);
-    let mut layer0 = Layer::new(&mut rng, 4, 8);
-    let mut layer1 = Layer::new(&mut rng, 8, 8);
-    let mut layer2 = Layer::new(&mut rng, 8, 1);
+    let mut xor = XOR::new();
 
-    let mut count = 0;
-    loop {
-        count += 1;
+    for _ in 0..10000 {
         let mut err = 0.;
 
-        for (&inputs, &target) in inputs.iter().zip(targets.iter()) {
-            let output = layer2.forward(
-                layer1.forward(layer0.forward(vec![inputs[0], inputs[0], inputs[1], inputs[1]])),
-            );
-            let loss = target - output[0];
-            layer2.backward(loss);
-            layer1.backward(loss);
-            layer0.backward(loss);
+        for (inputs, &target) in inputs.iter().zip(targets.iter()) {
+            let output = xor.forward(inputs);
+            let loss = target - output;
+            xor.backward(loss);
 
             println!(
-                "{}, {} -> {:.5}, {:.0}",
-                inputs[0], inputs[1], output[0], target,
+                "{}, {} -> {:.8}, {:.0}",
+                inputs[0], inputs[1], output, target,
             );
 
             err += loss.abs();
         }
 
-        println!("err: {:.5}", err);
-        if err < 1e-3 {
-            break;
-        }
+        println!("err: {:.8}", err);
     }
-
-    println!("count: {}", count);
 }
