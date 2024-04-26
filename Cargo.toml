@@ -9,6 +9,10 @@ edition = "2021"
 rand = "0.8.5"
 rand_distr = "0.4.3"
 
+[lib]
+name = "ed"
+path = "src/lib.rs"
+
 [[bin]]
 name = "sandbox"
 path = "src/sandbox.rs"
@@ -24,7 +28,3 @@ path = "src/ed.rs"
 [[bin]]
 name = "ed2"
 path = "src/ed2.rs"
-
-[[bin]]
-name = "ed3"
-path = "src/ed3.rs"
