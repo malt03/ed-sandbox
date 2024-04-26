@@ -48,6 +48,8 @@ mod tests {
     };
     use super::*;
 
+    const LEARNING_RATE: f64 = 0.5;
+
     #[test]
     fn test_bce_loss() {
         let inputs = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]];
@@ -55,15 +57,15 @@ mod tests {
 
         let mut xor = Gate::<Sigmoid>::new();
 
-        for _ in 0..200 {
+        for _ in 0..132 {
             let mut loss = 0.;
 
             for (inputs, &target) in inputs.iter().zip(targets.iter()) {
                 let output = xor.forward(inputs);
                 let delta = BCELoss::derivative((output, target));
-                xor.backward(delta * 0.5);
+                xor.backward(delta * LEARNING_RATE);
 
-                loss += BCELoss::eval((output, target));
+                loss += BCELoss::eval((output, target)).abs();
             }
 
             println!("loss: {:.8}", loss / 4.);
@@ -91,9 +93,9 @@ mod tests {
             for (inputs, &target) in inputs.iter().zip(targets.iter()) {
                 let output = xor.forward(inputs);
                 let delta = MSELoss::derivative((output, target));
-                xor.backward(delta * 0.5);
+                xor.backward(delta * LEARNING_RATE);
 
-                loss += MSELoss::eval((output, target));
+                loss += MSELoss::eval((output, target)).abs();
             }
 
             println!("loss: {:.8}", loss / 4.);
@@ -121,9 +123,9 @@ mod tests {
             for (inputs, &target) in inputs.iter().zip(targets.iter()) {
                 let output = xor.forward(inputs);
                 let delta = BCEWithLogitsLoss::derivative((output, target));
-                xor.backward(delta * 0.5);
+                xor.backward(delta * LEARNING_RATE);
 
-                loss += BCEWithLogitsLoss::eval((output, target));
+                loss += BCEWithLogitsLoss::eval((output, target)).abs();
             }
 
             println!("loss: {:.8}", loss / 4.);

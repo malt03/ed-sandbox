@@ -21,8 +21,8 @@ impl LossFn for BCEWithLogitsLoss {}
 impl DifferentiableFn for BCEWithLogitsLoss {
     type Args = (f64, f64);
     fn eval((output, target): Self::Args) -> f64 {
-        let output = output.max(1e-12).min(1. - 1e-12);
-        target * Sigmoid::eval(output).ln() + (1. - target) * (1. - Sigmoid::eval(output)).ln()
+        let output = Sigmoid::eval(output);
+        BCELoss::eval((output, target))
     }
     fn derivative((output, target): Self::Args) -> f64 {
         Sigmoid::eval(output) - target
