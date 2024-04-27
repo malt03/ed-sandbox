@@ -6,6 +6,7 @@ pub trait DifferentiableFn {
     fn derivative(input: Self::Args) -> f64;
 }
 
+#[derive(Debug)]
 pub struct PassThrough;
 impl DifferentiableFn for PassThrough {
     type Args = f64;
@@ -17,6 +18,7 @@ impl DifferentiableFn for PassThrough {
     }
 }
 
+#[derive(Debug)]
 pub struct Sigmoid;
 impl DifferentiableFn for Sigmoid {
     type Args = f64;

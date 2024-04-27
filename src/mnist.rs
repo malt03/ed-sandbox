@@ -58,29 +58,29 @@ fn read_images_labels<P: AsRef<Path>>(path: P) -> io::Result<Vec<Vec<f64>>> {
     Ok(images)
 }
 
-fn read_mnist_dataset<P: AsRef<Path>>(
-    labels_path: P,
-    images_path: P,
-) -> io::Result<(Vec<(u8, Vec<f64>)>)> {
+fn read_dataset<P: AsRef<Path>>(labels_path: P, images_path: P) -> io::Result<Vec<(u8, Vec<f64>)>> {
     let labels = read_labels(labels_path)?;
     let images = read_images_labels(images_path)?;
 
     Ok(labels.into_iter().zip(images.into_iter()).collect())
 }
 
-fn main() {
-    let images = read_mnist_dataset(
+pub struct Mnist {
+    pub train: Vec<(u8, Vec<f64>)>,
+    pub test: Vec<(u8, Vec<f64>)>,
+}
+
+pub fn read_mnist() -> Mnist {
+    let train = read_dataset(
         "mnist/train-labels.idx1-ubyte",
         "mnist/train-images.idx3-ubyte",
     )
-    .unwrap();
+    .expect("Failed to read training dataset");
+    let test = read_dataset(
+        "mnist/t10k-labels.idx1-ubyte",
+        "mnist/t10k-images.idx3-ubyte",
+    )
+    .expect("Failed to read test dataset");
 
-    let (label, image) = &images[0];
-    println!("label: {}", label);
-    for rows in image.chunks(28) {
-        for &pixel in rows {
-            print!("{}", if pixel > 0.5 { "😃" } else { " " });
-        }
-        println!();
-    }
+    Mnist { train, test }
 }

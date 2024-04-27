@@ -2,6 +2,7 @@ use super::differentiable_fn::DifferentiableFn;
 use rand::Rng;
 use std::marker::PhantomData;
 
+#[derive(Debug)]
 enum NeuronType {
     Excitatory,
     Inhibitory,
@@ -27,6 +28,7 @@ impl NeuronType {
     }
 }
 
+#[derive(Debug)]
 struct Neuron {
     neuron_type: NeuronType,
     weight: f64,
@@ -56,6 +58,7 @@ impl Neuron {
     }
 }
 
+#[derive(Debug)]
 struct SingleOutputLayer<ActivationFunc>
 where
     ActivationFunc: DifferentiableFn<Args = f64>,
@@ -81,15 +84,21 @@ where
         }
     }
 
-    fn forward(&mut self, inputs: &Vec<f64>) -> f64 {
-        self.last_output = self
-            .neurons
+    fn forward_without_activation(&self, inputs: &Vec<f64>) -> f64 {
+        self.neurons
             .iter()
             .zip(inputs.iter())
             .map(|(neuron, input)| neuron.forward(*input))
-            .sum();
+            .sum()
+    }
 
+    fn forward(&mut self, inputs: &Vec<f64>) -> f64 {
+        self.last_output = self.forward_without_activation(inputs);
         ActivationFunc::eval(self.last_output)
+    }
+
+    fn forward_without_train(&self, inputs: &Vec<f64>) -> f64 {
+        ActivationFunc::eval(self.forward_without_activation(inputs))
     }
 
     fn backward(&mut self, delta: f64, last_inputs: &Vec<f64>) {
@@ -109,6 +118,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Layer<ActivationFunc>
 where
     ActivationFunc: DifferentiableFn<Args = f64>,
@@ -121,7 +131,7 @@ impl<ActivationFunc> Layer<ActivationFunc>
 where
     ActivationFunc: DifferentiableFn<Args = f64>,
 {
-    pub fn new<R>(rng: &mut R, input: usize, output: usize) -> Self
+    pub(super) fn new<R>(rng: &mut R, input: usize, output: usize) -> Self
     where
         R: Rng,
     {
@@ -133,7 +143,7 @@ where
         }
     }
 
-    pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
+    pub(super) fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
         let output = self
             .inner_layers
             .iter_mut()
@@ -144,7 +154,14 @@ where
         output
     }
 
-    pub fn backward(&mut self, delta: f64) {
+    pub(super) fn forward_without_train(&self, inputs: Vec<f64>) -> Vec<f64> {
+        self.inner_layers
+            .iter()
+            .map(|layer| layer.forward_without_train(&inputs))
+            .collect()
+    }
+
+    pub(super) fn backward(&mut self, delta: f64) {
         for layer in self.inner_layers.iter_mut() {
             layer.backward(delta, &self.last_inputs);
         }
