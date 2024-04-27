@@ -1,6 +1,7 @@
 use super::{
     differentiable_fn::{PassThrough, Sigmoid},
     layer::Layer,
+    util::duplicate_elements,
 };
 use rand::{rngs::StdRng, SeedableRng};
 
@@ -15,7 +16,7 @@ impl Mnist {
     pub fn new(layer_num: usize, neural_num: usize) -> Self {
         let mut rng = StdRng::seed_from_u64(42);
         Mnist {
-            first_layer: Layer::new(&mut rng, 784, neural_num),
+            first_layer: Layer::new(&mut rng, 784 * 2, neural_num),
             layers: (0..layer_num)
                 .map(|_| Layer::new(&mut rng, neural_num, neural_num))
                 .collect(),
@@ -24,13 +25,15 @@ impl Mnist {
     }
 
     pub fn forward(&mut self, inputs: &[f64]) -> f64 {
-        let x = self.first_layer.forward(inputs.to_vec());
+        let x = duplicate_elements(inputs.into_iter()).collect();
+        let x = self.first_layer.forward(x);
         let x = self.layers.iter_mut().fold(x, |x, layer| layer.forward(x));
         self.last_layer.forward(x)[0]
     }
 
     pub fn forward_without_train(&self, inputs: &[f64]) -> f64 {
-        let x = self.first_layer.forward_without_train(inputs.to_vec());
+        let x = duplicate_elements(inputs.into_iter()).collect();
+        let x = self.first_layer.forward_without_train(x);
         let x = self
             .layers
             .iter()

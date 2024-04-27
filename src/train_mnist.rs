@@ -2,8 +2,8 @@ use ed::{dataset, BCEWithLogitsLoss, DifferentiableFn, Mnist};
 use plotters::prelude::*;
 
 const LEARNING_RATE: f64 = 0.02;
-const FIRST: u8 = 0;
-const SECOND: u8 = 1;
+const FIRST: u8 = 4;
+const SECOND: u8 = 9;
 
 fn filter_two_value(dataset: Vec<(u8, Vec<f64>)>) -> Vec<(u8, Vec<f64>)> {
     dataset
@@ -43,7 +43,7 @@ fn run_test(model: &Mnist, test: &Vec<(u8, Vec<f64>)>) {
 }
 
 fn main() {
-    let mut model = Mnist::new(4, 16);
+    let mut model = Mnist::new(0, 2);
     let mnist = dataset::read_mnist();
 
     let train: Vec<_> = filter_two_value(mnist.train);
@@ -65,7 +65,7 @@ fn main() {
     let mut losses = vec![];
     let mut accuracies = vec![];
 
-    for _ in 0..200 {
+    for _ in 0..10 {
         let mut sum_loss = 0.;
 
         for (label, image) in train.iter() {
