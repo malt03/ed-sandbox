@@ -1,86 +1,48 @@
-use std::fs::File;
-use std::io::{self, Read};
-use std::path::Path;
+use plotters::prelude::*;
 
-fn read_labels<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
-    let mut file = File::open(path)?;
-    let mut buffer = [0u8; 8];
-    file.read_exact(&mut buffer)?;
-    let magic = u32::from_be_bytes(buffer[0..4].try_into().unwrap());
-    let size = u32::from_be_bytes(buffer[4..8].try_into().unwrap());
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let xs: Vec<i32> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let ys: Vec<f32> = vec![0., 1., 2., 3., 4., 5., 6., 7., 8., 9.];
 
-    if magic != 2049 {
-        panic!("Magic number mismatch, expected 2049, got {}", magic);
-    }
+    let image_width = 1080;
+    let image_height = 720;
+    let root = BitMapBackend::new("plot.png", (1080, 720)).into_drawing_area();
 
-    let mut labels = vec![0u8; size as usize];
-    file.read_exact(&mut labels)?;
+    // 背景を白にする
+    root.fill(&WHITE)?;
 
-    Ok(labels)
-}
+    /* (3) グラフ全般の設定 */
 
-fn read_images_labels<P: AsRef<Path>>(path: P) -> io::Result<Vec<Vec<f64>>> {
-    let mut images = Vec::new();
+    /* y軸の最大最小値を算出
+    f32型はNaNが定義されていてys.iter().max()等が使えないので工夫が必要
+    参考サイト
+    https://qiita.com/lo48576/items/343ca40a03c3b86b67cb */
+    let (y_min, y_max) = ys
+        .iter()
+        .fold((0.0 / 0.0, 0.0 / 0.0), |(m, n), v| (v.min(m), v.max(n)));
 
-    let mut file = File::open(path)?;
-    let mut buffer = [0u8; 16];
-    file.read_exact(&mut buffer)?;
-    let magic = u32::from_be_bytes(buffer[0..4].try_into().unwrap());
-    let size = u32::from_be_bytes(buffer[4..8].try_into().unwrap());
-    let rows = u32::from_be_bytes(buffer[8..12].try_into().unwrap());
-    let cols = u32::from_be_bytes(buffer[12..16].try_into().unwrap());
+    let caption = "Sample Plot";
+    let font = ("sans-serif", 20);
 
-    if magic != 2051 {
-        panic!("Magic number mismatch, expected 2051, got {}", magic);
-    }
+    let mut chart = ChartBuilder::on(&root)
+        .caption(caption, font.into_font()) // キャプションのフォントやサイズ
+        .margin(10) // 上下左右全ての余白
+        .x_label_area_size(16) // x軸ラベル部分の余白
+        .y_label_area_size(42) // y軸ラベル部分の余白
+        .build_cartesian_2d(
+            // x軸とy軸の数値の範囲を指定する
+            *xs.first().unwrap()..*xs.last().unwrap(), // x軸の範囲
+            y_min..y_max,                              // y軸の範囲
+        )?;
 
-    let image_size = (rows * cols) as usize;
-    let total_image_data_size = image_size * size as usize;
-    let mut image_data = vec![0u8; total_image_data_size];
-    file.read_exact(&mut image_data)?;
+    /* (4) グラフの描画 */
 
-    for i in 0..size {
-        let start = i as usize * image_size;
-        let image_slice = &image_data[start..start + image_size];
-        images.push(image_slice.to_vec());
-    }
+    // x軸y軸、グリッド線などを描画
+    chart.configure_mesh().draw()?;
 
-    let images = images
-        .into_iter()
-        .map(|image| {
-            image
-                .into_iter()
-                .map(|pixel| pixel as f64 / 255.0)
-                .collect()
-        })
-        .collect();
+    // 折れ線グラフの定義＆描画
+    let line_series = LineSeries::new(xs.iter().zip(ys.iter()).map(|(x, y)| (*x, *y)), &RED);
+    chart.draw_series(line_series)?;
 
-    Ok(images)
-}
-
-fn read_mnist_dataset<P: AsRef<Path>>(
-    labels_path: P,
-    images_path: P,
-) -> io::Result<(Vec<(u8, Vec<f64>)>)> {
-    let labels = read_labels(labels_path)?;
-    let images = read_images_labels(images_path)?;
-
-    Ok(labels.into_iter().zip(images.into_iter()).collect())
-}
-
-fn main() {
-    let images = read_mnist_dataset(
-        "mnist/train-labels.idx1-ubyte",
-        "mnist/train-images.idx3-ubyte",
-    )
-    .unwrap();
-
-    let (label, image) = &images[0];
-    println!("label: {}", label);
-    for rows in image.chunks(28) {
-        for &pixel in rows {
-            print!("{}", if pixel > 0.5 { "😃" } else { " " });
-        }
-        println!();
-    }
+    Ok(())
 }

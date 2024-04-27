@@ -1,4 +1,5 @@
 use ed::{dataset, BCEWithLogitsLoss, DifferentiableFn, Mnist};
+use plotters::prelude::*;
 
 const LEARNING_RATE: f64 = 0.02;
 const FIRST: u8 = 0;
@@ -61,8 +62,11 @@ fn main() {
 
     run_test(&model, &test);
 
+    let mut losses = vec![];
+    let mut accuracies = vec![];
+
     for _ in 0..200 {
-        let mut loss = 0.;
+        let mut sum_loss = 0.;
 
         for (label, image) in train.iter() {
             let label = float_label(*label);
@@ -71,7 +75,7 @@ fn main() {
             model.backward(delta * LEARNING_RATE);
 
             let l = BCEWithLogitsLoss::eval((output, label)).abs();
-            loss += l;
+            sum_loss += l;
         }
 
         let correct_count = train
@@ -82,14 +86,71 @@ fn main() {
             })
             .count();
 
+        let loss = sum_loss / train_len as f64;
+        let accuracy = correct_count as f64 / train_len as f64;
         println!(
             "loss: {:.8}, correct: {} / {} = {}",
-            loss / train_len as f64,
-            correct_count,
-            train_len,
-            correct_count as f64 / train_len as f64
+            loss, correct_count, train_len, accuracy
         );
+
+        losses.push(sum_loss / train_len as f64);
+        accuracies.push(accuracy);
     }
 
     run_test(&model, &test);
+
+    let root = BitMapBackend::new("plot.png", (1080, 720)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+    let loss_range = *min(losses.iter())..*max(losses.iter());
+    let accuracy_range = *min(accuracies.iter())..*max(accuracies.iter());
+    let mut chart = ChartBuilder::on(&root)
+        .margin(10)
+        .x_label_area_size(16)
+        .y_label_area_size(42)
+        .right_y_label_area_size(42)
+        .build_cartesian_2d(0..losses.len() - 1, loss_range)
+        .unwrap()
+        .set_secondary_coord(0..accuracies.len() - 1, accuracy_range);
+
+    chart.configure_mesh().y_desc("Loss").draw().unwrap();
+    chart
+        .configure_secondary_axes()
+        .y_desc("Accuracy")
+        .draw()
+        .unwrap();
+
+    let data = losses.iter().enumerate().map(|(i, &loss)| (i, loss));
+    let series = LineSeries::new(data, &RED);
+    chart.draw_series(series).unwrap();
+
+    let data = accuracies
+        .iter()
+        .enumerate()
+        .map(|(i, &accuracy)| (i, accuracy));
+    let series = LineSeries::new(data, &BLUE);
+    chart.draw_secondary_series(series).unwrap();
+}
+
+fn max<T, I>(iter: I) -> T
+where
+    T: PartialOrd,
+    I: Iterator<Item = T>,
+{
+    iter.fold(None, |max, x| match max {
+        None => Some(x),
+        Some(y) => Some(if x > y { x } else { y }),
+    })
+    .unwrap()
+}
+
+fn min<T, I>(iter: I) -> T
+where
+    T: PartialOrd,
+    I: Iterator<Item = T>,
+{
+    iter.fold(None, |max, x| match max {
+        None => Some(x),
+        Some(y) => Some(if x < y { x } else { y }),
+    })
+    .unwrap()
 }
