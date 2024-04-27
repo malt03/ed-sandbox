@@ -43,7 +43,7 @@ fn run_test(model: &Mnist, test: &Vec<(u8, Vec<f64>)>) {
 }
 
 fn main() {
-    let mut model = Mnist::new(0, 2);
+    let mut model = Mnist::new(1, 4);
     let mnist = dataset::read_mnist();
 
     let train: Vec<_> = filter_two_value(mnist.train);
@@ -51,7 +51,7 @@ fn main() {
 
     let train_len = train.len();
 
-    let first_count = train.iter().filter(|(label, _)| *label == 0).count();
+    let first_count = train.iter().filter(|(label, _)| *label == FIRST).count();
     println!(
         "{}: {}, {}: {}",
         FIRST,
