@@ -3,4 +3,4 @@ pub(super) mod gate;
 pub(super) mod layer;
 pub(super) mod loss_fn;
 pub(super) mod mnist;
-mod util;
+pub(super) mod util;

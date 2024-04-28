@@ -1,48 +1,60 @@
-use plotters::prelude::*;
+use ed::{
+    duplicate_elements, unduplicate_elements, BCEWithLogitsLoss, CrossEntropyLoss,
+    DifferentiableFn, Layer, PassThrough, Sigmoid,
+};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let xs: Vec<i32> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let ys: Vec<f32> = vec![0., 1., 2., 3., 4., 5., 6., 7., 8., 9.];
+use rand::{rngs::StdRng, SeedableRng};
 
-    let image_width = 1080;
-    let image_height = 720;
-    let root = BitMapBackend::new("plot.png", (1080, 720)).into_drawing_area();
+#[derive(Debug)]
+pub struct Sandbox {
+    // layer0: Layer<Sigmoid>,
+    layer1: Layer<PassThrough>,
+}
 
-    // 背景を白にする
-    root.fill(&WHITE)?;
+impl Sandbox {
+    pub fn new() -> Self {
+        let mut rng = StdRng::seed_from_u64(42);
+        Sandbox {
+            // layer0: Layer::new(&mut rng, 16, 16),
+            layer1: Layer::new(&mut rng, 8, 8),
+        }
+    }
 
-    /* (3) グラフ全般の設定 */
+    pub fn forward(&mut self, inputs: &[f64]) -> Vec<f64> {
+        let x = duplicate_elements(inputs.into_iter()).collect();
+        // let x = self.layer0.forward(x);
+        let x = self.layer1.forward(x);
+        unduplicate_elements(x.iter()).collect()
+    }
 
-    /* y軸の最大最小値を算出
-    f32型はNaNが定義されていてys.iter().max()等が使えないので工夫が必要
-    参考サイト
-    https://qiita.com/lo48576/items/343ca40a03c3b86b67cb */
-    let (y_min, y_max) = ys
-        .iter()
-        .fold((0.0 / 0.0, 0.0 / 0.0), |(m, n), v| (v.min(m), v.max(n)));
+    pub fn forward_without_train(&self, inputs: &[f64]) -> Vec<f64> {
+        let x = duplicate_elements(inputs.into_iter()).collect();
+        // let x = self.layer0.forward_without_train(x);
+        let x = self.layer1.forward_without_train(x);
+        unduplicate_elements(x.iter()).collect()
+    }
 
-    let caption = "Sample Plot";
-    let font = ("sans-serif", 20);
+    pub fn backward(&mut self, delta: Vec<f64>) {
+        // for d in delta.iter() {
+        //     self.layer0.backward(*d);
+        // }
+        let delta = duplicate_elements(delta.iter()).collect();
+        self.layer1.backward_multi(&delta);
+        // self.layer1.backward(delta[0]);
+    }
+}
 
-    let mut chart = ChartBuilder::on(&root)
-        .caption(caption, font.into_font()) // キャプションのフォントやサイズ
-        .margin(10) // 上下左右全ての余白
-        .x_label_area_size(16) // x軸ラベル部分の余白
-        .y_label_area_size(42) // y軸ラベル部分の余白
-        .build_cartesian_2d(
-            // x軸とy軸の数値の範囲を指定する
-            *xs.first().unwrap()..*xs.last().unwrap(), // x軸の範囲
-            y_min..y_max,                              // y軸の範囲
-        )?;
+fn main() {
+    let mut model = Sandbox::new();
 
-    /* (4) グラフの描画 */
+    let input = vec![0.0, 1.0, 1.0, 1.0];
+    let target = vec![0.0, 0.0, 1.0, 0.0];
 
-    // x軸y軸、グリッド線などを描画
-    chart.configure_mesh().draw()?;
-
-    // 折れ線グラフの定義＆描画
-    let line_series = LineSeries::new(xs.iter().zip(ys.iter()).map(|(x, y)| (*x, *y)), &RED);
-    chart.draw_series(line_series)?;
-
-    Ok(())
+    for _ in 0..10 {
+        let output = model.forward(&input);
+        let loss = CrossEntropyLoss::eval((&output, &target));
+        let delta = CrossEntropyLoss::derivative((&output, &target));
+        println!("{}: {:?}", loss, CrossEntropyLoss::softmax(&output),);
+        model.backward(delta);
+    }
 }

@@ -131,7 +131,7 @@ impl<ActivationFunc> Layer<ActivationFunc>
 where
     ActivationFunc: DifferentiableFn<Args = f64>,
 {
-    pub(super) fn new<R>(rng: &mut R, input: usize, output: usize) -> Self
+    pub fn new<R>(rng: &mut R, input: usize, output: usize) -> Self
     where
         R: Rng,
     {
@@ -143,7 +143,7 @@ where
         }
     }
 
-    pub(super) fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
+    pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
         let output = self
             .inner_layers
             .iter_mut()
@@ -154,16 +154,22 @@ where
         output
     }
 
-    pub(super) fn forward_without_train(&self, inputs: Vec<f64>) -> Vec<f64> {
+    pub fn forward_without_train(&self, inputs: Vec<f64>) -> Vec<f64> {
         self.inner_layers
             .iter()
             .map(|layer| layer.forward_without_train(&inputs))
             .collect()
     }
 
-    pub(super) fn backward(&mut self, delta: f64) {
+    pub fn backward(&mut self, delta: f64) {
         for layer in self.inner_layers.iter_mut() {
             layer.backward(delta, &self.last_inputs);
+        }
+    }
+
+    pub fn backward_multi(&mut self, delta: &Vec<f64>) {
+        for (layer, delta) in self.inner_layers.iter_mut().zip(delta.iter()) {
+            layer.backward(*delta, &self.last_inputs);
         }
     }
 }
