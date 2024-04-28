@@ -101,7 +101,7 @@ where
         ActivationFunc::eval(self.forward_without_activation(inputs))
     }
 
-    fn backward(&mut self, delta: f64, last_inputs: &Vec<f64>) {
+    fn backward(&mut self, delta: f64, last_inputs: &Vec<f64>) -> f64 {
         let delta = ActivationFunc::derivative(self.last_output) * delta;
 
         for (i, neuron) in self.neurons.iter_mut().enumerate() {
@@ -115,6 +115,8 @@ where
                 }
             }
         }
+
+        delta
     }
 }
 
@@ -167,9 +169,11 @@ where
         }
     }
 
-    pub fn backward_multi(&mut self, delta: &Vec<f64>) {
-        for (layer, delta) in self.inner_layers.iter_mut().zip(delta.iter()) {
-            layer.backward(*delta, &self.last_inputs);
-        }
+    pub fn backward_multi(&mut self, delta: &Vec<f64>) -> Vec<f64> {
+        self.inner_layers
+            .iter_mut()
+            .zip(delta.iter())
+            .map(|(layer, delta)| layer.backward(*delta, &self.last_inputs))
+            .collect()
     }
 }

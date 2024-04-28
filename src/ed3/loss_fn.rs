@@ -36,10 +36,17 @@ impl CrossEntropyLoss {
 
     pub fn eval((output, target): (&Vec<f64>, &Vec<f64>)) -> f64 {
         let output = CrossEntropyLoss::softmax(output);
+        let epsilon = 1e-10;
         -target
             .iter()
             .zip(output.iter())
-            .map(|(t, o)| *t * o.ln())
+            .map(|(t, o)| {
+                if *t == 0.0 {
+                    0.0
+                } else {
+                    *t * (o + epsilon).ln()
+                }
+            })
             .sum::<f64>()
     }
 
@@ -83,7 +90,7 @@ mod tests {
         let output = vec![1.0, 2.0, 3.0];
         let target = vec![0.0, 1.0, 0.0];
         let loss = CrossEntropyLoss::eval((&output, &target));
-        assert_eq!(loss, 1.4076059644443804);
+        assert_eq!(loss, 1.407605964035764);
     }
 
     #[test]
