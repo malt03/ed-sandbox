@@ -3,15 +3,15 @@ use ed::{duplicate_elements, unduplicate_elements, CrossEntropyLoss, Layer, Pass
 use rand::{rngs::StdRng, SeedableRng};
 
 #[derive(Debug)]
-pub struct Sandbox {
+pub struct Gate {
     layer0: Layer<Sigmoid>,
     last_layer: Layer<PassThrough>,
 }
 
-impl Sandbox {
+impl Gate {
     pub fn new() -> Self {
         let mut rng = StdRng::seed_from_u64(42);
-        Sandbox {
+        Gate {
             layer0: Layer::new(&mut rng, 4, 16),
             last_layer: Layer::new(&mut rng, 16, 4),
         }
@@ -25,22 +25,43 @@ impl Sandbox {
     }
 
     pub fn backward(&mut self, delta: Vec<f64>) {
-        let delta = duplicate_elements(delta.iter()).collect();
-        self.last_layer.backward_multi(&delta);
+        let delta: Vec<_> = duplicate_elements(delta.iter()).collect();
+        let delta = self.last_layer.backward_multi(&delta);
+
+        for d in delta.iter() {
+            self.layer0.backward(*d);
+        }
     }
 }
 
 const LEARNING_RATE: f64 = 0.8;
 
 fn main() {
-    let mut model = Sandbox::new();
+    let mut model = Gate::new();
 
+    // xor
+    // let train = vec![
+    //     (vec![0., 0.], vec![1., 0.]),
+    //     (vec![1., 0.], vec![0., 1.]),
+    //     (vec![0., 1.], vec![0., 1.]),
+    //     (vec![1., 1.], vec![1., 0.]),
+    // ];
+
+    // and
     let train = vec![
-        // (vec![0., 0.], vec![1., 0.]),
-        (vec![1., 0.], vec![0., 1.]),
-        (vec![0., 1.], vec![0., 1.]),
-        (vec![1., 1.], vec![1., 0.]),
+        (vec![0., 0.], vec![1., 0.]),
+        (vec![1., 0.], vec![1., 0.]),
+        (vec![0., 1.], vec![1., 0.]),
+        (vec![1., 1.], vec![0., 1.]),
     ];
+
+    // or
+    // let train = vec![
+    //     (vec![0., 0.], vec![1., 0.]),
+    //     (vec![1., 0.], vec![0., 1.]),
+    //     (vec![0., 1.], vec![0., 1.]),
+    //     (vec![1., 1.], vec![0., 1.]),
+    // ];
 
     for _ in 0..1000 {
         let mut sum_loss = 0.;
