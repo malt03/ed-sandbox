@@ -179,9 +179,9 @@ where
     }
 
     pub fn backward(&mut self, deltas: &Vec<f64>) {
-        for (layers, &delta) in self.inner_layers.iter_mut().zip(deltas.iter()) {
+        for (layers, delta) in self.inner_layers.iter_mut().zip(deltas.iter()) {
             for layer in layers {
-                layer.backward(delta, &self.last_inputs[0]);
+                layer.backward(*delta, &self.last_inputs[0]);
             }
         }
     }

@@ -57,19 +57,24 @@ fn main() {
     let mnist = dataset::read_mnist();
 
     let train = one_hot_encoding_all_labels(mnist.train);
-    let test = one_hot_encoding_all_labels(mnist.test);
+    let test = mnist.test;
 
     let train_len = train.len();
 
     let mut losses = vec![];
     let mut accuracies = vec![];
+    let mut test_accuracies = vec![];
 
-    for _ in 0..10 {
+    for _ in 0..100 {
         let mut sum_loss = 0.;
+        let mut correct_count = 0;
 
-        for (_, label, image) in train.iter() {
+        for (i, (label, encoded_label, image)) in train.iter().enumerate() {
+            if i % 10000 == 0 {
+                println!("{} / {}", i, train_len);
+            }
             let output = model.forward(image);
-            let deltas = CrossEntropyLoss::derivative((&output, label));
+            let deltas = CrossEntropyLoss::derivative((&output, encoded_label));
             model.backward(
                 deltas
                     .into_iter()
@@ -77,40 +82,59 @@ fn main() {
                     .collect(),
             );
 
-            let loss = CrossEntropyLoss::eval((&output, label)).abs();
+            let loss = CrossEntropyLoss::eval((&output, encoded_label));
             sum_loss += loss;
+
+            let output = CrossEntropyLoss::softmax(&output);
+            let output_index = output
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                .unwrap()
+                .0;
+            if output_index == *label as usize {
+                correct_count += 1;
+            }
         }
 
-        let correct_count = train
+        let test_correct_count = test
             .iter()
-            .filter(|(label, _, image)| {
-                let output = model.forward(image);
+            .filter(|(label, image)| {
+                let output = model.forward_without_train(image);
                 let output = CrossEntropyLoss::softmax(&output);
-                let index = output
+                let output_index = output
                     .iter()
                     .enumerate()
                     .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                     .unwrap()
                     .0;
-                index == *label as usize
+                output_index == *label as usize
             })
             .count();
 
         let loss = sum_loss / train_len as f64;
         let accuracy = correct_count as f64 / train_len as f64;
+        let test_accuracy = test_correct_count as f64 / test.len() as f64;
         println!(
-            "loss: {:.8}, correct: {} / {} = {}",
-            loss, correct_count, train_len, accuracy
+            "loss: {:.8}, correct: {} / {} = {}, test: {} / {} = {}",
+            loss,
+            correct_count,
+            train_len,
+            accuracy,
+            test_correct_count,
+            test.len(),
+            test_accuracy
         );
 
         losses.push(sum_loss / train_len as f64);
         accuracies.push(accuracy);
+        test_accuracies.push(test_accuracy);
     }
 
     let root = BitMapBackend::new("plot.png", (1080, 720)).into_drawing_area();
     root.fill(&WHITE).unwrap();
     let loss_range = *min(losses.iter())..*max(losses.iter());
-    let accuracy_range = *min(accuracies.iter())..*max(accuracies.iter());
+    let accuracy_range = 0.8..1.0;
     let mut chart = ChartBuilder::on(&root)
         .margin(10)
         .x_label_area_size(16)
@@ -136,6 +160,13 @@ fn main() {
         .enumerate()
         .map(|(i, &accuracy)| (i, accuracy));
     let series = LineSeries::new(data, &BLUE);
+    chart.draw_secondary_series(series).unwrap();
+
+    let data = test_accuracies
+        .iter()
+        .enumerate()
+        .map(|(i, &accuracy)| (i, accuracy));
+    let series = LineSeries::new(data, &GREEN);
     chart.draw_secondary_series(series).unwrap();
 }
 

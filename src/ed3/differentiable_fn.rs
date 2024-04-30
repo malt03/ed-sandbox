@@ -1,6 +1,6 @@
 use std::f64::consts::E;
 
-pub trait DifferentiableFn {
+pub trait DifferentiableFn: Send {
     type Args;
     fn eval(input: Self::Args) -> f64;
     fn derivative(input: Self::Args) -> f64;
