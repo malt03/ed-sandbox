@@ -120,6 +120,73 @@ where
     }
 }
 
+pub struct MultiOutputLayer<ActivationFunc>
+where
+    ActivationFunc: DifferentiableFn<Args = f64>,
+{
+    inner_layers: Vec<Vec<SingleOutputLayer<ActivationFunc>>>,
+    last_inputs: Vec<Vec<f64>>,
+}
+
+impl<ActivationFunc> MultiOutputLayer<ActivationFunc>
+where
+    ActivationFunc: DifferentiableFn<Args = f64>,
+{
+    pub fn new<R>(rng: &mut R, last_output: usize, input: usize, output: usize) -> Self
+    where
+        R: Rng,
+    {
+        MultiOutputLayer {
+            inner_layers: (0..last_output)
+                .map(|_| {
+                    (0..output)
+                        .map(|i| SingleOutputLayer::new(rng, i, input))
+                        .collect()
+                })
+                .collect(),
+            last_inputs: Vec::new(),
+        }
+    }
+
+    pub fn forward(&mut self, inputs: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+        let output = self
+            .inner_layers
+            .iter_mut()
+            .zip(inputs.iter())
+            .map(|(layers, inputs)| {
+                layers
+                    .iter_mut()
+                    .map(|layer| layer.forward(&inputs))
+                    .collect()
+            })
+            .collect();
+        self.last_inputs = inputs;
+
+        output
+    }
+
+    pub fn forward_without_train(&self, inputs: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+        self.inner_layers
+            .iter()
+            .zip(inputs.iter())
+            .map(|(layers, inputs)| {
+                layers
+                    .iter()
+                    .map(|layer| layer.forward_without_train(&inputs))
+                    .collect()
+            })
+            .collect()
+    }
+
+    pub fn backward(&mut self, deltas: &Vec<f64>) {
+        for (layers, &delta) in self.inner_layers.iter_mut().zip(deltas.iter()) {
+            for layer in layers {
+                layer.backward(delta, &self.last_inputs[0]);
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Layer<ActivationFunc>
 where
@@ -163,17 +230,10 @@ where
             .collect()
     }
 
-    pub fn backward(&mut self, delta: f64) {
-        for layer in self.inner_layers.iter_mut() {
-            layer.backward(delta, &self.last_inputs);
-        }
-    }
-
-    pub fn backward_multi(&mut self, delta: &Vec<f64>) -> Vec<f64> {
+    pub fn backward(&mut self, delta: f64) -> Vec<f64> {
         self.inner_layers
             .iter_mut()
-            .zip(delta.iter())
-            .map(|(layer, delta)| layer.backward(*delta, &self.last_inputs))
+            .map(|layer| layer.backward(delta, &self.last_inputs))
             .collect()
     }
 }

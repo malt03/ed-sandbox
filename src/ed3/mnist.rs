@@ -43,9 +43,9 @@ impl Mnist {
 
     pub fn backward(&mut self, delta: f64) {
         self.first_layer.backward(delta);
-        self.layers
-            .iter_mut()
-            .for_each(|layer| layer.backward(delta));
+        self.layers.iter_mut().for_each(|layer| {
+            layer.backward(delta);
+        });
         self.last_layer.backward(delta);
     }
 }
