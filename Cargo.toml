@@ -33,3 +33,7 @@ path = "src/ed2.rs"
 [[bin]]
 name ="train_mnist"
 path = "src/train_mnist.rs"
+
+[[bin]]
+name = "train_all_mnist"
+path = "src/train_all_mnist.rs"

@@ -1,6 +1,4 @@
-use ed::{
-    duplicate_elements, CrossEntropyLoss, DifferentiableFn, MultiOutputLayer, PassThrough, Sigmoid,
-};
+use ed::{duplicate_elements, CrossEntropyLoss, MultiOutputLayer, PassThrough, Sigmoid};
 
 use rand::{rngs::StdRng, SeedableRng};
 
